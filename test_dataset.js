@@ -116,7 +116,7 @@ db.usuario.insertMany([
 ]);
 
 
-db.vehiculo.insertmany([
+db.vehiculo.insertMany([
   { "_id": 30001, "tipo_vehiculo": "moto", "placa": "MTO01", "marca": "Yamaha", "modelo": "2020", "cliente_id": 20021, "color": "Rojo" },
   { "_id": 30002, "tipo_vehiculo": "carro", "placa": "CAR02", "marca": "Toyota", "modelo": "2021", "cliente_id": 20022, "color": "Azul" },
   { "_id": 30003, "tipo_vehiculo": "camion", "placa": "CAM03", "marca": "Volvo", "modelo": "2018", "cliente_id": 20023, "color": "Blanco" },
