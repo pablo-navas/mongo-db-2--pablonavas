@@ -1,8 +1,3 @@
-// ==========================================
-// 1. db_config.js
-// Configuración de la base de datos y validaciones
-// ==========================================
-
 use sistema_parqueos;
 
 // Eliminamos colecciones previas para poder ejecutar este archivo varias veces sin errores
