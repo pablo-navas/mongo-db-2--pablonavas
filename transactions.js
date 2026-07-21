@@ -1,44 +1,45 @@
-//Para hacer transacciones, necesitamos iniciar una sesión.
-const session = db.getMongo().startSession();
 
-// Arrancamos la transacción dentro de esa sesión.
+const session = db.getMongo().startSession();
 session.startTransaction();
 
- // Guardamos las colecciones pero conectadas a la sesión
 try {
-  const parquesColl = session.getDatabase("miBasedeDatos").parques;
-  const zonasColl = session.getDatabase("miBasedeDatos").zonas;
+  const zonasColl = session.getDatabase("sistema_parqueos").zonas;
+  const parqueosColl = session.getDatabase("sistema_parqueos").parqueos;
 
-  // ahors registraremos que un carro acaba de entrar!!.
-  parquesColl.insertOne({
-    _id: 50001,
-    vehiculo: {
-      vehiculo_id: 30099,
-      tipo_vehiculo: "carro",
-      placa: "ABC99",
-      marca: "Ford"
-    },
-    sede_id: 10001,
-    zona_id: "Z-CAR-1",
+  const idZona = ObjectId("COLOCA_AQUI_UN_ID_DE_ZONA");
+  const idVehiculo = ObjectId("COLOCA_AQUI_UN_ID_DE_VEHICULO");
+
+  // 1. Validar que la zona existe
+  const zona = zonasColl.findOne({ _id: idZona }, { session });
+  if (!zona) throw new Error("La zona solicitada no existe.");
+
+  // 2. Validar que haya cupos disponibles
+  if (zona.cupos_disponibles <= 0) throw new Error("No hay cupos disponibles en esta zona.");
+
+  // 3. Registrar el parqueo
+  parqueosColl.insertOne({
+    vehiculo_id: idVehiculo,
+    sede_id: zona.sede_id,
+    zona_id: idZona,
     hora_entrada: new Date(),
     estado: "activo"
-  });
+  }, { session });
 
-  //  quitamos un cupo a la zona porque el carro ocupó el espacio Usamos $inc y -1.
-  zonasColl.updateOne(
-    { _id: "Z-CAR-1" },
-    { $inc: { cupos_disponibles: -1 } }
+  // 4. Actualizar los cupos y validar que se actualizó correctamente, -1 para decir que un parqueo ya no esta disponible
+  const updateResult = zonasColl.updateOne(
+    { _id: idZona, cupos_disponibles: { $gt: 0 } },
+    { $inc: { cupos_disponibles: -1 } },
+    { session }
   );
 
-  // Si llegamos hasta aquí sin errores, guardamos todo de verdad
+  if (updateResult.modifiedCount === 0) throw new Error("Fallo al actualizar los cupos.");
+
   session.commitTransaction();
+  print("Transacción exitosa: Parqueo registrado y cupo descontado.");
 
 } catch (error) {
   session.abortTransaction();
-   
-  //si no existe o algun problema: abortamos la transacción. Es como hacer "Ctrl+Z"!! .
-  print("Hubo un error, no se guardó nada. Error: " + error);
+  print("Transacción abortada. Razón: " + error.message);
 } finally {
   session.endSession();
-}
-
+};

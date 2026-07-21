@@ -9,44 +9,31 @@ db.createRole({
   ]
 });
 
-// 2. Rol: Empleado de sede
-
 db.createRole({
-  role: "RolEmpleado",
+  role: "Empleado",
   privileges: [
-    {
-      resource: { db: "miBasedeDatos", collection: "parques" },
-      actions: ["find", "insert", "update"] // Leer, ingresar y dar salida
-    },
-    {
-      resource: { db: "miBasedeDatos", collection: "zonas" },
-      actions: ["find"] // Solo leer disponibilidad
-    }
+    { resource: { db: "sistema_parqueos", collection: "parqueos" }, actions: ["find", "insert", "update"] },
+    { resource: { db: "sistema_parqueos", collection: "zonas" }, actions: ["find", "update"] },
+    { resource: { db: "sistema_parqueos", collection: "vehiculos" }, actions: ["find"] }
   ],
   roles: []
 });
 
-// 3. Rol: Cliente
+// Crear rol de cliente
 db.createRole({
-  role: "RolCliente",
+  role: "Cliente",
   privileges: [
-    {
-      resource: { db: "miBasedeDatos", collection: "parques" },
-      actions: ["find"]
-    },
-    {
-      resource: { db: "miBasedeDatos", collection: "zonas" },
-      actions: ["find"]
-    }
+    { resource: { db: "sistema_parqueos", collection: "parqueos" }, actions: ["find"] },
+    { resource: { db: "sistema_parqueos", collection: "zonas" }, actions: ["find"] }
   ],
   roles: []
 });
 
-// EJEMPLO 
-db.createUser({
-  user: "JuanEmpleado",
-  pwd: "password123",
-  roles: [
-    { role: "RolEmpleado", db: "miBasedeDatos" }
-  ]
-});
+// Crear usuarios
+db.createUser({ user: "cajero_norte", pwd: "password123", roles: [] });
+db.createUser({ user: "cliente_juan", pwd: "password123", roles: [] });
+
+// Asignar los roles a los usuarios 
+db.grantRolesToUser("cajero_norte", [{ role: "RolEmpleadoSede", db: "sistema_parqueos" }]);
+db.grantRolesToUser("cliente_juan", [{ role: "RolCliente", db: "sistema_parqueos" }]);
+print("Rol creado, Bienvenido.");
