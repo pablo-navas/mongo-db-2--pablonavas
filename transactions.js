@@ -5,7 +5,6 @@ session.startTransaction();
 try {
   const zonasColl = session.getDatabase("sistema_parqueos").zonas;
   const parqueosColl = session.getDatabase("sistema_parqueos").parqueos;
-
   const idZona = ObjectId("COLOCA_AQUI_UN_ID_DE_ZONA");
   const idVehiculo = ObjectId("COLOCA_AQUI_UN_ID_DE_VEHICULO");
 
@@ -29,17 +28,15 @@ try {
   const updateResult = zonasColl.updateOne(
     { _id: idZona, cupos_disponibles: { $gt: 0 } },
     { $inc: { cupos_disponibles: -1 } },
-    { session }
-  );
-
-  if (updateResult.modifiedCount === 0) throw new Error("Fallo al actualizar los cupos.");
+    { session });
+if (updateResult.modifiedCount === 0) throw new Error("Fallo al actualizar los cupos.");
 
   session.commitTransaction();
-  print("Transacción exitosa: Parqueo registrado y cupo descontado.");
+   print( "Parqueo registrado");
 
 } catch (error) {
   session.abortTransaction();
   print("Transacción abortada. Razón: " + error.message);
-} finally {
-  session.endSession();
+} finally
+ { session.endSession();
 };
