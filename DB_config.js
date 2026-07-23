@@ -17,7 +17,6 @@ db.runCommand({
     }
   }
 });
-
 // vehiculos
 db.runCommand({
   collMod: "vehiculos",
