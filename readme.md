@@ -1,77 +1,30 @@
- Sistema de Gestión de Parqueaderos en MongoDB
+# Por qué se eligió MongoDB?
+Rendimiento y Concurrencia: Ideal para sistemas de parqueo que manejan un alto volumen de operaciones de escritura y lectura en tiempo real.
 
-Este proyecto implementa una solución completa en MongoDB para la gestión de vehículos, parqueos, zonas y sedes de una red de estacionamientos. El diseño está enfocado en la alta velocidad de lectura, integridad de datos mediante validaciones de esquema, transacciones para evitar inconsistencias de cupos y control de acceso mediante roles.
+Transacciones ACID: Permite ejecutar operaciones multi-documento seguras, garantizando que el registro de un parqueo y el descuento de cupos en una zona ocurran de manera atómica y consistente.
 
- Tabla de Contenidos
-1. [Introducción al Proyecto](#introducción-al-proyecto)
-2. [Justificación del Uso de MongoDB](#justificación-del-uso-de-mongodb)
-3. [Diseño del Modelo de Datos](#diseño-del-modelo-de-datos)
-4. [Validaciones $jsonSchema](#validaciones-jsonschema)
-5. [Índices e Inserciones de Rendimiento](#índices-e-inserciones-de-rendimiento)
-6. [Estructura de Datos de Prueba](#estructura-de-datos-de-prueba)
-7. [Agregaciones (queries resueltas)](#agregaciones)
-8. [Transacciones](#transacciones)
-9. [Roles y Seguridad](#roles-y-seguridad)
-10. [Conclusiones y Mejoras Posibles](#conclusiones-y-mejoras-posibles)
+Estructura Flexible y Escalable: Facilita el manejo de datos orientados a documentos, lo que permite estructurar jerarquías claras entre sedes, zonas, clientes y vehículos de forma natural.
 
+Seguridad y Control Nativo: Ofrece un sistema robusto de control de acceso basado en roles y validación estricta de esquemas integrada, asegurando la integridad operativa sin depender de capas externas complejas.
+ 
+ # Sistema de Estacionamiento
 
+Base de datos diseñada en MongoDB (`mongosh`) para la gestión integral de un sistema de parqueaderos multi-sede, con control de acceso basado en roles, validación de esquemas y transacciones ACID.
 
-*Introducción al Proyecto Bv
-El objetivo del sistema es llevar el control en tiempo real y todo momento, de los vehículos que ingresan y salen de distintos estacionamientos. Permite saber el estado actual de cada zona  calcular cobros de parqueo y generar reportes analíticos de rendimiento por sede y que no se derrumbes.
+## Estructura de Colecciones
+- `sedes`: Información de las sucursales u oficinas principales.
+- `zonas`: Áreas o pisos de cada sede con control de capacidad.
+- `clientes y empleados`: Registro de usuarios del sistema y Personal operativo asignado a las sedes.
+- `vehiculos`: Información automotor vinculada a los clientes.
+- `parqueos`: Historial de entradas, salidas, estados (`activo`, `finalizado`) y tiempos.
 
-*el Uso de MongoDB
-Se seleccionó MongoDB por las siguientes razones:
-+-- Escalabilidad y velocidad: Permite procesar mil y un registros  y salida simultáneos, sin problemas.
+# Control de Acceso 
+1. `adminParqueo`: Control total (CRUD) sobre sedes, zonas, empleados, clientes y vehículos. Permiso de solo lectura en `parqueos`.
+2. `empleadoParqueo`: Permite registrar, actualizar y consultar `clientes`, `vehiculos` y `parqueos` (sin permisos de eliminación).
+3. `clienteParqueo`: Acceso de lectura exclusivo para consultar sus datos personales y vehículos.
 
-+-- Modelo Embebido:  Nos permite guardar los datos del vehículo dentro del mismo registro de parqueo. Esto evita hacer uniones costosas cada vez que se consulta qué vehículo está estacionados.
-
-+-- Flexibilidad de Esquema: Facilita la evolución de la base de datos sin necesidad de realizar migraciones complejas de tablas.
-
-
-
-*Diseño del Modelo de Datos
-
-Colecciones que decicidi colocar 
-
-+-- parques:: Almacena las entradas, salidas-cálculo de costos (estas solo si ya se fue el vehiculo) y la información completa del vehículo parqueado.
-
-+-- zonas: Mantiene la capacidad máxima y los cupos disponibles actualizados en tiempo real por cada sede.
-
-+-- vehiculo: _id, tipo_vehiculo: "carro, moto, camion, bicicleta o monopatin electrico", placa, marca, modelo, cliente_id  color
-
-+-- clientes(empledo): _id, cedula, nombre, correo, rol: "empleado", Empleado de sede, sede_id, genero.
-
-+-- clientes(cliente): _id, cedula, nombre, correo, rol: "Cliente", genero
-
-
-+-- sedes: Información de las distintas ubicaciones de parqueadero.
-
-
-* Validaciones
-
-Para asegurar que ningún documento se guarde con datos incorrectos o corruptos, se aplicó una regla de validación Schema en la colección de parkes
-
-parques:
-
-db.createCollection("parques", {
-   validator: {
-      $jsonSchema: {
-         bsonType: "object",
-         required: ["vehiculo", "sede_id", "zona_id", "hora_entrada", "estado"],
-         properties: {
-            estado: {
-               enum: ["activo", "finalizado"],
-               description: "El estado solo puede ser 'activo' o 'finalizado'"
-            },
-            hora_entrada: {
-               bsonType: "string",
-               description: "Debe ser una fecha válida en texto ISO o Date"
-            },
-            costo_total: {
-               bsonType: ["double", "int", "number"],
-               description: "El costo total debe ser un número positivo si existe"
-            }
-         }
-      }
-   }
-});
+# Características Técnicas
+- Validación de Esquemas (`collMod`): Restricción de tipos de datos estrictos en todas las colecciones (ej. validación estricta de objetos `Date` para tiempos de parqueo).
+- Índices Estratégicos: Optimización de consultas mediante campos únicos (`placa`, `email`, `codigo_empleado`) y índices compuestos para reportes rápidos.
+- Agregaciones Avanzadas: Consultas analíticas optimizadas usando `$lookup`, `$group`, `$match` y `$sort` para reportes de ingresos, zonas más ocupadas e historiales.
+- Transacciones ACID: Bloques seguros para el registro concurrente de ingresos de vehículos y el descuento automático de cupos en zonas.

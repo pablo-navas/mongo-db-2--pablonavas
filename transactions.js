@@ -3,8 +3,8 @@ const session = db.getMongo().startSession();
 session.startTransaction();
 
 try {
-  const zonasColl = session.getDatabase("sistema_parqueos").zonas;
-  const parqueosColl = session.getDatabase("sistema_parqueos").parqueos;
+  const zonasColl = session.getDatabase("examen_parking").zonas;
+  const parqueosColl = session.getDatabase("examen_parking").parqueos;
 
   const idZona = ObjectId("COLOCA_AQUI_UN_ID_DE_ZONA");
   const idVehiculo = ObjectId("COLOCA_AQUI_UN_ID_DE_VEHICULO");
@@ -32,14 +32,14 @@ try {
     { session }
   );
 
-  if (updateResult.modifiedCount === 0) throw new Error("Fallo al actualizar los cupos.");
+  if (updateResult.modifiedCount === 0) throw new Error("Fallo al actualizar los cupos :(.");
 
   session.commitTransaction();
-  print("Transacción exitosa: Parqueo registrado y cupo descontado.");
+  print("Felicidades, parqueo registrado");
 
 } catch (error) {
   session.abortTransaction();
-  print("Transacción abortada. Razón: " + error.message);
+  print("Transacción abortada con exito!!" + error.message);
 } finally {
   session.endSession();
 };

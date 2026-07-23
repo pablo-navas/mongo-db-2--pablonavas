@@ -1,30 +1,45 @@
 // role admin
 db.createRole({
-  role: "RolAdmin",
+  role: "Admin",
   privileges: [],
   roles: [
-    { role: "readWriteAnyDatabase", db: "admin" },
-    { role: "userAdminAnyDatabase", db: "admin" },
-    { role: "dbAdminAnyDatabase", db: "admin" }
+    { role: "readWriteAnyDatabase", db: "examen_paking" },
+    { role: "userAdminAnyDatabase", db: "examen_paking" },
+    { role: "dbAdminAnyDatabase", db: "examen_paking" }
   ]
 });
 
 db.createRole({
-  role: "Empleado",
+  role: "empleado",
   privileges: [
-    { resource: { db: "sistema_parqueos", collection: "parqueos" }, actions: ["find", "insert", "update"] },
-    { resource: { db: "sistema_parqueos", collection: "zonas" }, actions: ["find", "update"] },
-    { resource: { db: "sistema_parqueos", collection: "vehiculos" }, actions: ["find"] }
+    {
+      resource: { db: "examen_paking", collection: "clientes" },
+      actions: ["find", "insert", "update"] // Sin "remove"
+    },
+    {
+      resource: { db: "examen_paking", collection: "vehiculos" },
+      actions: ["find", "insert", "update"] // Sin "remove"
+    },
+    {
+      resource: { db: "examen_paking", collection: "parqueos" },
+      actions: ["find", "insert", "update"] // Sin "remove"
+    }
   ],
   roles: []
 });
 
 // Crear rol de cliente
 db.createRole({
-  role: "Cliente",
+  role: "cliente",
   privileges: [
-    { resource: { db: "sistema_parqueos", collection: "parqueos" }, actions: ["find"] },
-    { resource: { db: "sistema_parqueos", collection: "zonas" }, actions: ["find"] }
+    {
+      resource: { db: "examen_paking", collection: "clientes" },
+      actions: ["find"]
+    },
+    {
+      resource: { db: "examen_paking", collection: "vehiculos" },
+      actions: ["find"]
+    }
   ],
   roles: []
 });
@@ -34,6 +49,6 @@ db.createUser({ user: "cajero_norte", pwd: "password123", roles: [] });
 db.createUser({ user: "cliente_juan", pwd: "password123", roles: [] });
 
 // Asignar los roles a los usuarios 
-db.grantRolesToUser("cajero_norte", [{ role: "RolEmpleadoSede", db: "sistema_parqueos" }]);
-db.grantRolesToUser("cliente_juan", [{ role: "RolCliente", db: "sistema_parqueos" }]);
+db.grantRolesToUser("cajero_norte", [{ role: "empleado", db: "examen_pakings" }]);
+db.grantRolesToUser("cliente_juan", [{ role: "Cliente", db: "examen_pakings" }]);
 print("Rol creado, Bienvenido.");

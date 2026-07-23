@@ -1,21 +1,22 @@
+// 1. Parqueos entre un rango de fechas (Usando ISODate para coincidir con bsonType: "date")
 db.parques.aggregate([
   {
     $match: {
       hora_entrada: {
-        $gte: "2023-10-01T00:00:00Z",
-        $lt: "2023-11-01T00:00:00Z"
+        $gte: ISODate("2023-10-01T00:00:00Z"),
+        $lt: ISODate("2023-11-01T00:00:00Z")
       }
     }
   },
+
   {
     $group: {
       _id: "$sede_id",
       total_parqueos: { $sum: 1 }
     }
-  }
-]);
+  }]);
 
-// 2. ¿Cuáles son las zonas más ocupadas en cada sede? agrupamos por dos cosas a la vez (sede y zona). Luego contamos cuántos hay. Al final usamos $sort para ordenar de mayor a menor -1osea  y ver las más ocupadas arriba.
+// 2. Zonas más ocupadas agrupadas por sede y zona
 db.parques.aggregate([
   {
     $group: {
@@ -28,7 +29,7 @@ db.parques.aggregate([
   }
 ]);
 
-// 3. ¿Cuál es el ingreso total generado por parqueo en cada sede? Primero filtramos solo los parqueos que ya están "finalizados" porque son los que tienen cobro. Después agrupamos por sede y sumamos el campo llamado costo_total
+// 3. Ingreso total generado por parqueos finalizados por sede
 db.parques.aggregate([
   {
     $match: { estado: "finalizado" }
@@ -41,39 +42,59 @@ db.parques.aggregate([
   }
 ]);
 
-// 4. ¿Qué cliente ha usado más veces el parqueadero? como el cliente está dentro de vehiculo, agrupamos por vehiculo.cliente_id. Contamos, ordenamos de mayor a menor y usamos $limit para que solo nos devuelva el primer lugar (el ganador).
-db.parques.aggregate([
+// 4. Cliente que más ha usado el parqueadero (Requiere $lookup con vehiculos)
+db.parqueos.aggregate([
+  {
+    $lookup: {
+      from: "vehiculos",
+      localField: "vehiculo_id",
+      foreignField: "_id",
+      as: "vehiculo"
+    }
+  },
+  { $unwind: "$vehiculo" },
   {
     $group: {
       _id: "$vehiculo.cliente_id",
       veces_usado: { $sum: 1 }
     }
   },
-  {
-    $sort: { veces_usado: -1 }
-  },
-  {
-    $limit: 1
-  }
-]);
+  { $sort: { veces_usado: -1 } },
+  { $limit: 1 }]);
 
-// 5. ¿Qué tipo de vehículo es más frecuente por sede? Aggrupamos por sede y tipo de vehículo. Cuenta cuántos hay de cada uno, Luego ordenamos. Para ver el más frecuente, los más altos quedarán de primeros.
+// 5. Tipo de vehículo más frecuente por sede 
 db.parques.aggregate([
+  {
+    $lookup: {
+      from: "vehiculos",
+      localField: "vehiculo_id",
+      foreignField: "_id",
+      as: "vehiculo"
+    }
+  },
+  { $unwind: "$vehiculo" },
   {
     $group: {
       _id: { sede: "$sede_id", tipo: "$vehiculo.tipo_vehiculo" },
       cantidad: { $sum: 1 }
     }
   },
-  {
-    $sort: { "_id.sede": 1, cantidad: -1 }
-  }
+  { $sort: { "_id.sede": 1, cantidad: -1 } }
 ]);
 
-// 6. Dado un cliente, mostrar su historial de parqueos. Digamos que buscamos al cliente 20022. Usamos $match para encontrarlo. Luego usamos $project para decirle a Mongo: HEy!! solo muéstrame estos campos y oculta los demás :D.
+// 6. Historial de parqueos de un cliente por su ObjectId
 db.parques.aggregate([
   {
-    $match: { "vehiculo.cliente_id": 20022 }
+    $lookup: {
+      from: "vehiculos",
+      localField: "vehiculo_id",
+      foreignField: "_id",
+      as: "vehiculo"
+    }
+  },
+  { $unwind: "$vehiculo" },
+ {
+    $match: { "vehiculo.cliente_id": ObjectId("Reemplaza con el ObjectId rea") }
   },
   {
     $project: {
@@ -81,18 +102,26 @@ db.parques.aggregate([
       fecha: "$hora_entrada",
       sede: "$sede_id",
       zona: "$zona_id",
-      tipo_vehiculo: "$vehiculo.tipo_vehiculo",
-      tiempo: "$tiempo_total_minutos",
+      placa: "$vehiculo.placa",
       costo: "$costo_total"
     }
   }
 ]);
 
-// 7. Mostrar los vehículos parqueados actualmente en cada sede. Filtramos los que tienen estado activo.  Agrupamos por sede y usamos $push para meter las placas en una lista para que se vea ordenado.
+// 7. Vehículos parqueados actualmente (activos) por sede
 db.parques.aggregate([
   {
     $match: { estado: "activo" }
   },
+  {
+    $lookup: {
+      from: "vehiculos",
+      localField: "vehiculo_id",
+      foreignField: "_id",
+      as: "vehiculo"
+    }
+  },
+  { $unwind: "$vehiculo" },
   {
     $group: {
       _id: "$sede_id",
@@ -101,7 +130,7 @@ db.parques.aggregate([
   }
 ]);
 
-// 8. Listar zonas que han excedido su capacidad de parqueo en algún momento. Supongamos que la capacidad máxima de una zona es de 5 vehículos. agrupamos los activos por zona, los contamos, y con otro $match, filtramos los que tengan más de 5.
+// 8. Zonas con más de 5 parqueos activos simultáneos
 db.parques.aggregate([
   {
     $match: { estado: "activo" }
@@ -114,5 +143,4 @@ db.parques.aggregate([
   },
   {
     $match: { ocupados_ahora: { $gt: 5 } } 
-  }
-]);
+  }]);

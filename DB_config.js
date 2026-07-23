@@ -1,139 +1,165 @@
-// ==========================================
-// 1. db_config.js
-// Configuración de la base de datos y validaciones
-// ==========================================
-
-use sistema_parqueos;
-
-// Eliminamos colecciones previas para poder ejecutar este archivo varias veces sin errores
-db.parqueos.drop();
-db.vehiculos.drop();
-db.clientes.drop();
-db.zonas.drop();
-db.sedes.drop();
-
-// 1. Colección: sedes
-db.createCollection("sedes", {
-   validator: {
-      $jsonSchema: {
-         bsonType: "object",
-         required: ["nombre", "direccion"],
-         properties: {
-            nombre: { bsonType: "string", description: "Nombre de la sede requerido" },
-            direccion: { bsonType: "string", description: "Dirección requerida" }
-         }
+// clientes
+db.runCommand({
+  collMod: "clientes",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["nombre", "apellido", "email"],
+      properties: {
+        nombre: { bsonType: "string" },
+        apellido: { bsonType: "string" },
+        email: { 
+          bsonType: "string", 
+          pattern: "^.+@.+$" 
+        },
+        telefono: { bsonType: "string" }
       }
-   }
-});
-
-// 2. Colección: zonas (¡Ahora es independiente, ya no está embebida!)
-db.createCollection("zonas", {
-   validator: {
-      $jsonSchema: {
-         bsonType: "object",
-         required: ["sede_id", "nombre_zona", "capacidad_maxima", "cupos_disponibles", "tipo_vehiculo_permitido"],
-         properties: {
-            sede_id: { bsonType: "objectId", description: "Referencia a la sede" },
-            nombre_zona: { bsonType: "string" },
-            capacidad_maxima: { bsonType: "int" },
-            cupos_disponibles: { bsonType: "int" },
-            tipo_vehiculo_permitido: { enum: ["carro", "moto", "bici", "monopatin electrico"] 
-}}}}});
-
-// Colección: clientes
-db.createCollection("clientes", {
-   validator: {
-      $jsonSchema: {
-         bsonType: "object",
-         required: ["nombre_completo", "documento_identidad"],
-         properties: {
-            nombre_completo: { bsonType: "string" },
-            documento_identidad: { bsonType: "string" }}}
-   }
-});
-
-// Colección: vehiculos
-db.createCollection("vehiculos", {
-   validator: {
-      $jsonSchema: {
-         bsonType: "object",
-         required: ["cliente_id", "placa", "tipo_vehiculo"],
-         properties: {
-            cliente_id: { bsonType: "objectId" },
-            placa: { bsonType: "string" },
-            tipo_vehiculo: { enum: ["carro", "moto", "bici"] }
-         }
-      }
-   }
-});
-
-// Colección: parqueos
-db.createCollection("parqueos", {
-   validator: {
-      $jsonSchema: {
-         bsonType: "object",
-         required: ["vehiculo_id", "sede_id", "zona_id", "hora_entrada", "estado"],
-         properties: {
-            vehiculo_id: { bsonType: "objectId" },
-            sede_id: { bsonType: "objectId" },
-            zona_id: { bsonType: "objectId" },
-            hora_entrada: { bsonType: "date", description: "Debe ser un objeto Date" },
-            hora_salida: { bsonType: "date" },
-            estado: { enum: ["activo", "finalizado"] }
-         }
-      }
-   }
-});
-
-//INDEX
-
-//parques
-db.parques.createIndex(
-  { sede_id: 1, zona_id: 1, "vehiculo.vehiculo_id": 1 }, 
-  { 
-    name: "inx_activos_ahora",
-    partialFilterExpression: { estado: "activo" },
-    background: true 
+    }
   }
+});
+
+// vehiculos
+db.runCommand({
+  collMod: "vehiculos",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["placa", "cliente_id"],
+      properties: {
+        placa: { bsonType: "string" },
+        cliente_id: { bsonType: "objectId" },
+        marca: { bsonType: "string" },
+        modelo: { bsonType: "string" },
+        color: { bsonType: "string" }
+      }
+    }
+  }
+});
+
+// parqueos
+db.runCommand({
+  collMod: "parqueos",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["vehiculo_id", "sede_id", "zona_id", "hora_entrada", "estado"],
+      properties: {
+        vehiculo_id: { bsonType: "objectId" },
+        sede_id: { bsonType: "objectId" },
+        zona_id: { bsonType: "objectId" },
+        hora_entrada: { bsonType: "date" },
+        hora_salida: { bsonType: "date" },
+        estado: { enum: ["activo", "finalizado"] }
+      }
+    }
+  }
+});
+
+// empleados
+db.runCommand({
+  collMod: "empleados",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["codigo_empleado", "nombre", "sede_id", "activo"],
+      properties: {
+        codigo_empleado: { bsonType: "string" },
+        nombre: { bsonType: "string" },
+        sede_id: { bsonType: "objectId" },
+        activo: { bsonType: "bool" }
+      }
+    }
+  }
+});
+
+// sedes
+db.runCommand({
+  collMod: "sedes",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["nombre", "ciudad"],
+      properties: {
+        nombre: { bsonType: "string" },
+        ciudad: { bsonType: "string" },
+        direccion: { bsonType: "string" }
+      }
+    }
+  }
+});
+
+// zonas
+db.runCommand({
+  collMod: "zonas",
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["nombre", "sede_id", "capacidad"],
+      properties: {
+        nombre: { bsonType: "string" },
+        sede_id: { bsonType: "objectId" },
+        capacidad: { bsonType: "int" }
+      }
+    }
+  }
+});
+// 1. Colección: clientes
+db.clientes.createIndex(
+  { email: 1 }, 
+  { unique: true, name: "idx_clientes_email_unique" }
 );
 
-// Índice Reportes Mensualespor indice por Fecha
-db.parques.createIndex(
-  { hora_entrada: -1 },
-  { name: "inx_fechas_parqueo", background: true }
-);
-
-// Índex "Historial del Cliente" 
-db.parques.createIndex(
-  { "vehiculo.cliente_id": 1 },
-  { name: "inx_historial_cliente", background: true }
+db.clientes.createIndex(
+  { apellido: 1, nombre: 1 }, 
+  { name: "idx_clientes_busqueda_nombre" }
 );
 
 
-//  COLECCIÓN: vehiculos 
+//  vehiculos
+
 db.vehiculos.createIndex(
-  { placa: 1}, 
-  { name: "inx_placa_unica", unique: true, background: true }
+  { placa: 1 }, 
+  { unique: true, name: "idx_vehiculos_placa_unique" }
 );
 
-// Índice Dueño del Carro
 db.vehiculos.createIndex(
   { cliente_id: 1 }, 
-  { name: "inx_dueño_vehiculo", background: true }
-);
-ss
-db.vehiculos.createIndex(
-  { tipo_vehiculo: 1 }, 
-  { name: "inx_tipo_vehiculo", background: true }
+  { name: "idx_vehiculos_cliente" }
 );
 
 
-db.clientes.createIndex(
-  { documento_identidad: 1 }, 
-  { name: "inx_documento_unico", unique: true, background: true }
+//  parqueos
+
+db.parqueos.createIndex(
+  { vehiculo_id: 1, estado: 1 }, 
+  { name: "idx_parqueos_vehiculo_estado" }
+);
+db.parqueos.createIndex(
+  { fecha_entrada: -1, estado: 1 }, 
+  { name: "idx_parqueos_fecha_estado" }
 );
 
-db.clientes.createIndex(
-  { correo: 1 }, 
-  { name: "inx_correo_unico", unique: true, background: true }
+
+// empleados
+
+
+db.empleados.createIndex(
+  { codigo_empleado: 1 }, 
+  { unique: true, name: "idx_empleados_codigo_unique" }
+);
+
+db.empleados.createIndex(
+  { sede_id: 1, activo: 1 }, 
+  { name: "idx_empleados_sede_activo" }
+);
+
+// sedes
+db.sedes.createIndex(
+  { nombre: 1 }, 
+  { unique: true, name: "idx_sedes_nombre_unique" }
+);
+
+db.sedes.createIndex(
+  { ciudad: 1 }, 
+  { name: "idx_ciudad" }
 );
