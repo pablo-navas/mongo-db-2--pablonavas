@@ -161,7 +161,6 @@ db.cliente.insertMany[
     { "_id": 40060, "tipo_vehiculo": "auto", "placa": "P-848STU", "marca": "honda", "modelo": "2019", "cliente_id": 30033, "color": "Negro" },
  ]);
 
- 
  db.parqueos.insertMany([
     "_id": 50080,
     "vehiculo":  { "_id": 40051, "tipo_vehiculo": "auto", "placa": "P-141ABC", "marca": "mazda", "modelo": "2018", "cliente_id": 30031, "color": "Rojo" },
